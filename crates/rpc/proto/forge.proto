@@ -1639,6 +1639,8 @@ message Switch {
   optional google.protobuf.Timestamp deleted = 4;
 
   string controller_state = 5;
+
+  BmcInfo bmc_info = 6;
 }
 
 message SwitchList {
