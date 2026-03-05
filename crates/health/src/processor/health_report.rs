@@ -192,7 +192,7 @@ impl EventProcessor for HealthReportProcessor {
                     .insert(Self::stream_key(context), HealthReportWindow::default());
             }
             CollectorEvent::Metric(metric) => {
-                let Some(health) = metric.health.as_ref() else {
+                let Some(health) = metric.context.as_ref() else {
                     return Vec::new();
                 };
                 let mut window = self.windows.entry(Self::stream_key(context)).or_default();
@@ -267,16 +267,14 @@ mod tests {
         let _ = processor.process_event(&context, &CollectorEvent::MetricCollectionStart);
         let _ = processor.process_event(
             &context,
-            &CollectorEvent::Metric(
-                SensorHealthData::from_metric_fields(
-                    "sensor-1".to_string(),
-                    "hw_sensor".to_string(),
-                    "temperature".to_string(),
-                    "celsius".to_string(),
-                    42.0,
-                    vec![],
-                )
-                .with_health_context(SensorHealthContext {
+            &CollectorEvent::Metric(SensorHealthData {
+                key: "sensor-1".to_string(),
+                name: "hw_sensor".to_string(),
+                metric_type: "temperature".to_string(),
+                unit: "celsius".to_string(),
+                value: 42.0,
+                labels: vec![],
+                context: Some(SensorHealthContext {
                     entity_type: "sensor".to_string(),
                     sensor_id: "Temp1".to_string(),
                     upper_critical: Some(30.0),
@@ -287,7 +285,7 @@ mod tests {
                     range_min: None,
                     bmc_health: Some(BmcHealth::Warning),
                 }),
-            ),
+            }),
         );
         let emitted = processor.process_event(&context, &CollectorEvent::MetricCollectionEnd);
 

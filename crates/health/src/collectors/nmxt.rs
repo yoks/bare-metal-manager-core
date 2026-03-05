@@ -286,23 +286,22 @@ impl NmxtCollector {
             metric_key.push(':');
             metric_key.push_str(&port_num);
 
-            let event_labels = vec![
+            let labels = vec![
                 (Cow::Borrowed("switch_id"), self.switch_id.clone()),
                 (Cow::Borrowed("switch_ip"), switch_ip.clone()),
                 (Cow::Borrowed("node_guid"), node_guid),
                 (Cow::Borrowed("port_num"), port_num),
             ];
 
-            self.emit_event(CollectorEvent::Metric(
-                SensorHealthData::from_metric_fields(
-                    metric_key,
-                    "switch_nmxt".to_string(),
-                    metric_type.to_string(),
-                    "count".to_string(),
-                    value,
-                    event_labels,
-                ),
-            ));
+            self.emit_event(CollectorEvent::Metric(SensorHealthData {
+                key: metric_key,
+                name: "switch_nmxt".to_string(),
+                metric_type: metric_type.to_string(),
+                unit: "count".to_string(),
+                value,
+                labels,
+                context: None,
+            }));
         }
 
         Ok(())

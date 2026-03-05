@@ -103,20 +103,21 @@ fn metric_events(
             let sensor_name = format!("sensor-{sensor_idx}");
             let reading = 20.0 + ((idx % 90) as f64);
 
-            let metric = SensorHealthData::from_metric_fields(
-                sensor_name.clone(),
-                "hw_sensor".to_string(),
-                "temperature".to_string(),
-                "celsius".to_string(),
-                reading,
-                vec![
+            let mut metric = SensorHealthData {
+                key: sensor_name.clone(),
+                name: "hw_sensor".to_string(),
+                metric_type: "temperature".to_string(),
+                unit: "celsius".to_string(),
+                value: reading,
+                labels: vec![
                     (Cow::Borrowed("sensor_name"), sensor_name.clone()),
                     (Cow::Borrowed("physical_context"), "cpu".to_string()),
                 ],
-            );
+                context: None,
+            };
 
             if with_health_context {
-                CollectorEvent::Metric(metric.with_health_context(SensorHealthContext {
+                metric.context = Some(SensorHealthContext {
                     entity_type: "sensor".to_string(),
                     sensor_id: sensor_name,
                     upper_critical: Some(85.0),
@@ -126,10 +127,9 @@ fn metric_events(
                     range_max: Some(100.0),
                     range_min: Some(0.0),
                     bmc_health: Some(BmcHealth::Warning),
-                }))
-            } else {
-                CollectorEvent::Metric(metric)
+                });
             }
+            CollectorEvent::Metric(metric)
         })
         .collect()
 }

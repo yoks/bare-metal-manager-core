@@ -204,15 +204,15 @@ mod tests {
     #[test]
     fn ignores_non_health_report_events() {
         let processor = LeakEventProcessor::new(1);
-        let metric_event =
-            CollectorEvent::Metric(crate::sink::SensorHealthData::from_metric_fields(
-                "k".to_string(),
-                "n".to_string(),
-                "gauge".to_string(),
-                "count".to_string(),
-                1.0,
-                Vec::new(),
-            ));
+        let metric_event = CollectorEvent::Metric(crate::sink::SensorHealthData {
+            key: "k".to_string(),
+            name: "n".to_string(),
+            metric_type: "gauge".to_string(),
+            unit: "count".to_string(),
+            value: 1.0,
+            labels: Vec::new(),
+            context: None,
+        });
         let emitted = processor.process_event(&context(), &metric_event);
         assert!(emitted.is_empty());
     }

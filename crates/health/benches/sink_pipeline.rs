@@ -64,14 +64,15 @@ fn metric_events(batch_size: usize, unique_keys: usize) -> Vec<CollectorEvent> {
             let sensor_idx = idx % unique_keys;
             let key = format!("sensor-{sensor_idx}");
 
-            CollectorEvent::Metric(SensorHealthData::from_metric_fields(
-                key.clone(),
-                "hw_sensor".to_string(),
-                "temperature".to_string(),
-                "celsius".to_string(),
-                (idx % 100) as f64,
-                vec![(Cow::Borrowed("sensor"), key)],
-            ))
+            CollectorEvent::Metric(SensorHealthData {
+                key: key.clone(),
+                name: "hw_sensor".to_string(),
+                metric_type: "temperature".to_string(),
+                unit: "celsius".to_string(),
+                value: (idx % 100) as f64,
+                labels: vec![(Cow::Borrowed("sensor"), key)],
+                context: None,
+            })
         })
         .collect()
 }

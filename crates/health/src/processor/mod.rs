@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+use std::borrow::Cow;
 use std::collections::VecDeque;
 use std::sync::Arc;
 mod health_report;
@@ -28,8 +29,8 @@ pub trait EventProcessor: Send + Sync {
     fn process_event(&self, context: &EventContext, event: &CollectorEvent) -> Vec<CollectorEvent>;
 }
 
-struct PendingEvent {
-    event: CollectorEvent,
+struct PendingEvent<'a> {
+    event: Cow<'a, CollectorEvent>,
     blocked_processors: Vec<bool>,
 }
 
@@ -70,7 +71,7 @@ impl EventProcessingPipeline {
                 let mut next_blocked_processors = blocked_processors.to_vec();
                 next_blocked_processors[processor_idx] = true;
                 queue.push_back(PendingEvent {
-                    event,
+                    event: Cow::Owned(event),
                     blocked_processors: next_blocked_processors,
                 });
             }
@@ -85,10 +86,10 @@ impl DataSink for EventProcessingPipeline {
             return;
         }
 
-        let mut queue = VecDeque::new();
-        let root_blocked_processors = vec![false; self.processors.len()];
-        self.deliver_to_sinks(context, event);
-        self.next_events(context, event, &root_blocked_processors, &mut queue);
+        let mut queue = VecDeque::from(vec![PendingEvent {
+            event: Cow::Borrowed(event),
+            blocked_processors: vec![false; self.processors.len()],
+        }]);
 
         while let Some(current) = queue.pop_front() {
             self.deliver_to_sinks(context, &current.event);
@@ -113,7 +114,6 @@ mod tests {
 
     use super::*;
     use crate::endpoint::BmcAddr;
-    use crate::sink::SensorHealthData;
 
     struct CountingSink {
         counter: Arc<AtomicUsize>,
@@ -166,14 +166,15 @@ mod tests {
             })],
         );
 
-        let event = CollectorEvent::Metric(SensorHealthData::from_metric_fields(
-            "key".to_string(),
-            "metric".to_string(),
-            "type".to_string(),
-            "unit".to_string(),
-            1.0,
-            Vec::new(),
-        ));
+        let event = CollectorEvent::Metric(crate::sink::SensorHealthData {
+            key: "k".to_string(),
+            name: "n".to_string(),
+            metric_type: "gauge".to_string(),
+            unit: "count".to_string(),
+            value: 1.0,
+            labels: Vec::new(),
+            context: None,
+        });
         pipeline.handle_event(&context(), &event);
 
         assert_eq!(processor_counter.load(Ordering::SeqCst), 1);

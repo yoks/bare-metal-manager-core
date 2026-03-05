@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-use std::borrow::Cow;
-
 use carbide_uuid::machine::MachineId;
 use nv_redfish::resource::Health as BmcHealth;
 
@@ -81,42 +79,7 @@ pub struct SensorHealthData {
     pub unit: String,
     pub value: f64,
     pub labels: Vec<MetricLabel>,
-    pub health: Option<SensorHealthContext>,
-}
-
-impl SensorHealthData {
-    pub fn from_metric_fields(
-        key: String,
-        name: String,
-        metric_type: String,
-        unit: String,
-        value: f64,
-        labels: Vec<MetricLabel>,
-    ) -> Self {
-        Self {
-            key,
-            name,
-            metric_type,
-            unit,
-            value,
-            labels,
-            health: None,
-        }
-    }
-
-    pub fn with_health_context(mut self, health: SensorHealthContext) -> Self {
-        self.health = Some(health);
-        self
-    }
-
-    pub fn set_label(
-        &mut self,
-        key: impl Into<Cow<'static, str>>,
-        value: impl Into<String>,
-    ) -> &mut Self {
-        self.labels.push((key.into(), value.into()));
-        self
-    }
+    pub context: Option<SensorHealthContext>,
 }
 
 #[derive(Clone, Debug)]
